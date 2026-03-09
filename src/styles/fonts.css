@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+/* Cera Pro — add your @font-face declarations here if self-hosting, or load via your font provider */
+@font-face {
+  font-family: 'Cera Pro';
+  font-weight: 300;
+  font-style: normal;
+  src: local('Cera Pro Light'), local('CeraPro-Light');
+}
+@font-face {
+  font-family: 'Cera Pro';
+  font-weight: 400;
+  font-style: normal;
+  src: local('Cera Pro'), local('CeraPro-Regular');
+}
+@font-face {
+  font-family: 'Cera Pro';
+  font-weight: 500;
+  font-style: normal;
+  src: local('Cera Pro Medium'), local('CeraPro-Medium');
+}
+@font-face {
+  font-family: 'Cera Pro';
+  font-weight: 700;
+  font-style: normal;
+  src: local('Cera Pro Bold'), local('CeraPro-Bold');
+}
