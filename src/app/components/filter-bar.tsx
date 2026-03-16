@@ -378,7 +378,7 @@ export function FilterBar({
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-colors whitespace-nowrap cursor-pointer ${
                 priceRange[0] > 100 || priceRange[1] < 500
                   ? "bg-brand-light text-brand border-brand/20"
-                  : "bg-white border-gray-200 text-gray-600 hover:border-gray-400"
+                  : "bg-white border-gray-200 text-gray-600 hover:border-brand"
               }`}
             >
               ${priceRange[0]} - ${priceRange[1]}
@@ -441,7 +441,7 @@ export function FilterBar({
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                   isActive
                     ? "bg-brand text-white border-brand"
-                    : "bg-white border-gray-200 text-gray-600 hover:border-gray-400"
+                    : "bg-white border-gray-200 text-gray-600 hover:border-brand"
                 }`}
               >
                 <Icon className="w-3 h-3" />
@@ -457,7 +457,7 @@ export function FilterBar({
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-colors whitespace-nowrap cursor-pointer ${
                 maxDistance !== null
                   ? "bg-brand-light text-brand border-brand/20"
-                  : "bg-white border-gray-200 text-gray-600 hover:border-gray-400"
+                  : "bg-white border-gray-200 text-gray-600 hover:border-brand"
               }`}
             >
               <MapPin className="w-3 h-3" />

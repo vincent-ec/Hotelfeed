@@ -10,12 +10,18 @@ import {
   Menu,
   ArrowUpDown,
   ArrowRight,
+  Hotel,
+  DollarSign,
+  Waves,
+  Sparkles,
+  Star,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { HotelCard } from "./components/hotel-card";
 import { MapPanel } from "./components/map-panel";
 import { FilterBar } from "./components/filter-bar";
 import { AiChat } from "./components/ai-chat";
+import { HotelStrip } from "./components/hotel-strip";
 import Vector from "../imports/Vector";
 
 const sortOptions = [
@@ -134,6 +140,7 @@ export default function App() {
   const [showSort, setShowSort] = useState(false);
   const [chatOverlayOpen, setChatOverlayOpen] = useState(false);
   const [maxDistance, setMaxDistance] = useState<number | null>(null);
+  const [activeSuggestion, setActiveSuggestion] = useState<string | null>(null);
   const headerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -218,6 +225,80 @@ export default function App() {
     return result;
   }, [searchQuery, activeFilters, priceRange, sortBy, maxDistance]);
 
+  // Hotels filtered by active suggestion (for map pins when suggestion strip is open)
+  const suggestionFilteredHotels = useMemo(() => {
+    if (!activeSuggestion) return filteredHotels;
+    const all = [...hotels];
+    switch (activeSuggestion) {
+      case "Hotels with pools under $200":
+        return all.filter((h) => h.amenities.includes("pool") && h.price <= 200);
+      case "Closest hotels to the venue":
+        return [...all].sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance)).slice(0, 3);
+      case "Top rated by guests":
+        return all.filter((h) => h.guestRating >= 4.5).sort((a, b) => b.guestRating - a.guestRating);
+      case "Best value for my group":
+        return [...all].sort((a, b) => a.price - b.price).slice(0, 3);
+      default:
+        return filteredHotels;
+    }
+  }, [activeSuggestion, filteredHotels]);
+
+  // Compute dynamic counts for suggestion pills
+  const poolUnder200Count = useMemo(() => hotels.filter((h) => h.amenities.includes("pool") && h.price <= 200).length, []);
+  const topRatedCount = useMemo(() => hotels.filter((h) => h.guestRating >= 4.5).length, []);
+
+  const SUGGESTION_PILLS = [
+    {
+      icon: MapPin,
+      label: "Closest hotels to the venue",
+      subtitle: "Walk or short drive",
+      gradient: "from-orange-500 to-rose-500",
+      bgHover: "hover:bg-orange-50",
+      iconBg: "bg-orange-500 text-white",
+    },
+    {
+      icon: Waves,
+      label: "Hotels with pools under $200",
+      subtitle: `${poolUnder200Count} option${poolUnder200Count !== 1 ? "s" : ""} available`,
+      gradient: "from-cyan-500 to-blue-500",
+      bgHover: "hover:bg-cyan-50",
+      iconBg: "bg-cyan-500 text-white",
+    },
+    {
+      icon: Star,
+      label: "Top rated by guests",
+      subtitle: `${topRatedCount} hotel${topRatedCount !== 1 ? "s" : ""} rated 4.5+`,
+      gradient: "from-amber-500 to-yellow-500",
+      bgHover: "hover:bg-amber-50",
+      iconBg: "bg-amber-500 text-white",
+    },
+    {
+      icon: DollarSign,
+      label: "Best value for my group",
+      subtitle: "Top 3 lowest rates",
+      gradient: "from-emerald-500 to-teal-500",
+      bgHover: "hover:bg-emerald-50",
+      iconBg: "bg-emerald-500 text-white",
+    },
+  ];
+
+  const handleSuggestionClick = (label: string) => {
+    // Toggle: clicking the same pill again closes the strip
+    if (activeSuggestion === label) {
+      setActiveSuggestion(null);
+    } else {
+      setActiveSuggestion(label);
+      // Close chat overlay so the map + hotel strip become visible
+      if (chatOverlayOpen) {
+        setChatOverlayOpen(false);
+      }
+    }
+  };
+
+  const handleChatOverlayChange = (open: boolean) => {
+    setChatOverlayOpen(open);
+  };
+
   return (
     <div className="h-full flex flex-col bg-gray-50 font-['Cera_Pro','Inter',sans-serif] overflow-y-auto md:overflow-hidden">
       <EventHeader headerRef={headerRef} />
@@ -225,16 +306,16 @@ export default function App() {
       {/* Main content */}
       <div className="flex-1 flex flex-col md:overflow-hidden">
         {/* Toolbar */}
-        <div className="sticky top-[var(--header-height,120px)] z-20 md:static px-3 sm:px-5 py-3 bg-white border-b border-gray-100 md:border-b-0">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              {activeFilters.length > 0 && (
+        <div className="sticky top-[var(--header-height,120px)] z-20 md:static px-3 sm:px-5 py-2 bg-white border-b border-gray-100 md:border-b-0">
+          {activeFilters.length > 0 && (
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
                 <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                   {activeFilters.length} filter{activeFilters.length > 1 ? "s" : ""} active
                 </span>
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
           <FilterBar
             sortBy={sortBy}
@@ -254,7 +335,7 @@ export default function App() {
         </div>
 
         {/* Content area */}
-        <div className="flex-1 flex md:overflow-hidden bg-white pr-0 md:pr-5 pb-0 md:pb-5">
+        <div className="flex-1 flex md:overflow-hidden bg-white pr-0 md:pr-5 pb-0 md:pb-5 relative">
           {/* Hotel list — on mobile: only in list mode; on desktop: always visible as sidebar */}
           <motion.div
             layout
@@ -265,7 +346,7 @@ export default function App() {
             }`}
           >
             {/* Kayak-style sort/results bar */}
-            <div className="sticky top-0 z-10 bg-white px-4 py-2.5 flex items-center justify-between">
+            <div className="sticky top-0 z-10 bg-white px-4 pt-[calc(0.625rem+0.5rem)] pb-2.5 flex items-center justify-between">
               <button
                 onClick={() => setChatOverlayOpen(true)}
                 className="flex items-center gap-1.5 text-sm text-gray-700 hover:text-brand transition-colors cursor-pointer"
@@ -361,23 +442,81 @@ export default function App() {
               viewMode === "map" ? "block" : "hidden md:flex"
             }`}
           >
-            <div className="flex-1 relative overflow-hidden rounded-tr-xl">
-              <MapPanel
-                hotels={filteredHotels}
-                activeHotelId={activeHotelId}
-                onHotelHover={(id) => setActiveHotelId(id)}
-                onHotelLeave={() => setActiveHotelId(null)}
-              />
+            {/* AI Suggestion pills above map — hidden when chat overlay is open */}
+            {!chatOverlayOpen && (
+            <div className="hidden md:flex items-center gap-2 px-4 pt-1 pb-2 shrink-0">
+              <div className="flex items-center gap-1.5 mr-1">
+                <Sparkles className="w-3.5 h-3.5 text-gray-900" />
+                <span className="text-sm text-gray-900 whitespace-nowrap">Top finds</span>
+              </div>
+              <div className="flex gap-2 flex-1 min-w-0">
+                {SUGGESTION_PILLS.map((pill) => {
+                  const Icon = pill.icon;
+                  const isActive = activeSuggestion === pill.label;
+                  return (
+                    <button
+                      key={pill.label}
+                      onClick={() => handleSuggestionClick(pill.label)}
+                      className={`group/pill flex items-center gap-2.5 pl-2 pr-4 py-2 rounded-xl border transition-all duration-200 whitespace-nowrap flex-1 min-w-0 cursor-pointer ${
+                        isActive
+                          ? "bg-brand-light border-brand/20 shadow-sm shadow-brand/10"
+                          : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-md hover:shadow-gray-100"
+                      }`}
+                    >
+                      <div className={`w-8 h-8 min-w-8 min-h-8 rounded-lg flex items-center justify-center transition-colors ${
+                        isActive ? "bg-brand/10 text-brand" : pill.iconBg
+                      }`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <p className={`text-[12px] transition-colors ${
+                          isActive ? "text-brand" : "text-gray-800 group-hover/pill:text-gray-900"
+                        }`}>
+                          {pill.label}
+                        </p>
+                        <p className="text-[10px] text-gray-400">{pill.subtitle}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="rounded-br-xl overflow-hidden hidden md:block">
-              <AiChat overlayOpen={chatOverlayOpen} onOverlayChange={setChatOverlayOpen} />
+            )}
+
+            {/* Map area — hidden when chat overlay is open */}
+            {!chatOverlayOpen && (
+              <div className="flex-1 relative overflow-hidden rounded-tr-xl">
+                <MapPanel
+                  hotels={activeSuggestion ? suggestionFilteredHotels : filteredHotels}
+                  activeHotelId={activeHotelId}
+                  onHotelHover={(id) => setActiveHotelId(id)}
+                  onHotelLeave={() => setActiveHotelId(null)}
+                  overlayOpen={chatOverlayOpen || !!activeSuggestion}
+                />
+
+                {/* Hotel strip overlay for suggestion pills */}
+                <HotelStrip
+                  hotels={suggestionFilteredHotels}
+                  label={activeSuggestion || ""}
+                  icon={SUGGESTION_PILLS.find((p) => p.label === activeSuggestion)?.icon}
+                  isOpen={!!activeSuggestion && !chatOverlayOpen}
+                  onClose={() => setActiveSuggestion(null)}
+                  onHotelHover={(id) => setActiveHotelId(id)}
+                  onHotelLeave={() => setActiveHotelId(null)}
+                />
+              </div>
+            )}
+
+            {/* Desktop AI chat — when overlay open, takes flex-1 to fill map area */}
+            <div className={`hidden md:flex flex-col shrink-0 ${chatOverlayOpen ? "flex-1 min-h-0" : ""}`}>
+              <AiChat overlayOpen={chatOverlayOpen} onOverlayChange={handleChatOverlayChange} />
             </div>
           </motion.div>
         </div>
 
         {/* Mobile floating chat bar */}
         <div className="md:hidden">
-          <AiChat variant="mobile-float" overlayOpen={chatOverlayOpen} onOverlayChange={setChatOverlayOpen} />
+          <AiChat variant="mobile-float" overlayOpen={chatOverlayOpen} onOverlayChange={handleChatOverlayChange} />
         </div>
       </div>
     </div>

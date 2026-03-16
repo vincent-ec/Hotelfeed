@@ -61,7 +61,7 @@ export const hotels: Hotel[] = [
     roomsLeft: 8,
     distance: "1.2 mi",
     driveTime: "18 mins",
-    amenities: ["wifi", "parking"],
+    amenities: ["wifi", "parking", "pool"],
     badges: ["Best deal"],
     isHostHotel: true,
     mapPosition: { x: 72, y: 55 },

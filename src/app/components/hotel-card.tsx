@@ -71,13 +71,15 @@ export function HotelCard({
       className={`group relative bg-white rounded-[10px] cursor-pointer transition-all duration-200 ${
         isActive
           ? "ring-2 ring-brand shadow-lg shadow-brand/10"
+          : hotel.isHostHotel
+          ? "ring-2 ring-purple-500"
           : "border border-gray-200 hover:shadow-lg hover:border-gray-300"
-      } ${hotel.isHostHotel ? "ring-2 ring-purple-500" : ""}`}
+      }`}
     >
-      {/* Host Hotel Badge */}
+      {/* Host Hotel Bar */}
       {hotel.isHostHotel && (
-        <div className="absolute -top-3 left-4 z-10 flex items-center gap-1.5 bg-purple-600 text-white px-3 py-1 rounded-full">
-          <Trophy className="w-3 h-3" />
+        <div className="flex items-center gap-1.5 bg-purple-600 text-white px-4 py-2 rounded-t-[10px]">
+          <Trophy className="w-3.5 h-3.5" />
           <span className="text-[11px] tracking-wide uppercase">Host Hotel</span>
         </div>
       )}
@@ -192,7 +194,7 @@ export function HotelCard({
               </span>
             )}
             <span className="text-xl text-gray-900 font-medium">${hotel.price}</span>
-            <p className="text-[10px] text-gray-500">Average rate</p>
+            <p className="text-[10px] text-gray-500 mb-3">Average rate</p>
           </div>
           <button
             onClick={(e) => {
@@ -208,7 +210,7 @@ export function HotelCard({
       {/* ===== MOBILE: vertical stacked layout (<md) ===== */}
       <div className="flex flex-col md:hidden">
         {/* Image — full width */}
-        <div className="relative w-full h-[180px] rounded-t-[10px] overflow-hidden">
+        <div className={`relative w-full h-[180px] overflow-hidden ${hotel.isHostHotel ? "" : "rounded-t-[10px]"}`}>
           <ImageWithFallback
             src={hotel.image}
             alt={hotel.name}

@@ -206,9 +206,16 @@ export function AiChat({ variant = "default", overlayOpen, onOverlayChange }: { 
     }
   }, [messages, isTyping, isOverlayOpen]);
 
+  // Auto-send removed — suggestion pills now show hotel strip instead of chat
+
   const handleSend = (text?: string) => {
     const content = text || inputValue.trim();
     if (!content) return;
+
+    // Open the overlay when a message is sent from the bottom bar
+    if (!isOverlayOpen) {
+      setIsOverlayOpen(true);
+    }
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -346,20 +353,7 @@ export function AiChat({ variant = "default", overlayOpen, onOverlayChange }: { 
             </div>
 
             {/* Overlay input bar */}
-            <div className="px-4 py-3 bg-white border-t border-gray-100 shrink-0 space-y-2.5">
-              {/* Suggestion pills */}
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
-                {SUGGESTIONS.map((s) => (
-                  <button
-                    key={s.label}
-                    onClick={() => handleSend(s.label)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-200 text-[13px] text-gray-600 hover:text-gray-900 hover:border-gray-300 hover:shadow-sm transition-all whitespace-nowrap shrink-0"
-                  >
-                    <s.icon className="w-4 h-4 text-gray-400" />
-                    {s.label}
-                  </button>
-                ))}
-              </div>
+            <div className="px-4 py-3 bg-white shrink-0 space-y-2.5">
               <div className="flex items-center gap-2 bg-gray-100 rounded-full pl-3 pr-2.5 py-2 border border-gray-200 focus-within:border-gray-300 focus-within:bg-gray-50 transition-all">
                 <input
                   ref={overlayInputRef}
@@ -388,111 +382,111 @@ export function AiChat({ variant = "default", overlayOpen, onOverlayChange }: { 
         )}
       </AnimatePresence>
 
-      {/* Desktop overlay chat — rendered inside the map column */}
-      <AnimatePresence>
-        {isOverlayOpen && variant === "default" && (
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="absolute inset-0 z-20 bg-white flex flex-col rounded-r-xl overflow-hidden"
-          >
-            {/* Overlay header - desktop */}
-            <div className="border border-gray-200 rounded-[16px] flex flex-col flex-1 overflow-hidden mx-4 mt-4 mb-2">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 shrink-0 text-brand">
-                  <Vector16 />
-                </div>
-                <div>
-                  <span className="text-sm text-gray-900">Booking Assistant</span>
-                  <span className="text-[9px] text-brand bg-brand-light px-1.5 py-0.5 rounded-full ml-2">AI</span>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsOverlayOpen(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-[6px] hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Messages area */}
-            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 scrollbar-hide bg-gray-50/50">
-              {allOverlayMessages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  {msg.role === "assistant" && (
-                    <div className="w-6 h-6 shrink-0 mr-2 mt-0.5 text-brand">
+      {/* Desktop overlay chat — renders as flow element, fills parent when open */}
+      {variant === "default" && (
+        <AnimatePresence>
+          {isOverlayOpen && (
+            <motion.div
+              key="desktop-overlay"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="flex-1 flex flex-col min-h-0 bg-white overflow-hidden"
+            >
+              {/* Chat content card */}
+              <div className="border border-gray-200 rounded-[16px] flex flex-col flex-1 overflow-hidden mx-4 mt-1.5 mb-2 min-h-0">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 shrink-0 text-brand">
                       <Vector16 />
                     </div>
+                    <div>
+                      <span className="text-sm text-gray-900">Booking Assistant</span>
+                      <span className="text-[9px] text-brand bg-brand-light px-1.5 py-0.5 rounded-full ml-2">AI</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsOverlayOpen(false)}
+                    className="w-8 h-8 flex items-center justify-center rounded-[6px] hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Messages area */}
+                <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 scrollbar-hide bg-gray-50/50">
+                  {allOverlayMessages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                    >
+                      {msg.role === "assistant" && (
+                        <div className="w-6 h-6 shrink-0 mr-2 mt-0.5 text-brand">
+                          <Vector16 />
+                        </div>
+                      )}
+                      {renderMessageContent(msg, "max-w-[80%]")}
+                    </div>
+                  ))}
+
+                  {isTyping && (
+                    <div className="flex justify-start">
+                      <div className="w-6 h-6 shrink-0 mr-2 mt-0.5 text-brand">
+                        <Vector16 />
+                      </div>
+                      <div className="bg-white border border-gray-100 px-3.5 py-2.5 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce [animation-delay:0ms]" />
+                        <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce [animation-delay:150ms]" />
+                        <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce [animation-delay:300ms]" />
+                      </div>
+                    </div>
                   )}
-                  {renderMessageContent(msg, "max-w-[80%]")}
+                  <div ref={overlayMessagesEndRef} />
                 </div>
-              ))}
+              </div>
 
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="w-6 h-6 shrink-0 mr-2 mt-0.5 text-brand">
-                    <Vector16 />
-                  </div>
-                  <div className="bg-white border border-gray-100 px-3.5 py-2.5 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce [animation-delay:0ms]" />
-                    <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce [animation-delay:150ms]" />
-                    <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce [animation-delay:300ms]" />
-                  </div>
+              {/* Overlay input bar */}
+              <div className="px-4 py-3 bg-white shrink-0 space-y-2.5">
+                <div className="flex items-center gap-2 bg-gray-100 rounded-full pl-2.5 pr-2.5 py-2 border border-gray-200 focus-within:border-gray-300 focus-within:bg-gray-50 transition-all">
+                  <button
+                    onClick={() => setIsOverlayOpen(false)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+                  >
+                    <div className="w-4 h-[18px]">
+                      <Vector />
+                    </div>
+                  </button>
+                  <input
+                    ref={overlayInputRef}
+                    type="text"
+                    placeholder="Ask Booking Assistant anything..."
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none min-w-0"
+                  />
+                  {inputValue.trim() ? (
+                    <button
+                      onClick={() => handleSend()}
+                      className="w-8 h-8 flex items-center justify-center rounded-full bg-brand hover:bg-brand-hover text-white transition-colors shrink-0"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                    </button>
+                  ) : (
+                    <button className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-colors shrink-0">
+                      <AudioLines className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
-              )}
-              <div ref={overlayMessagesEndRef} />
-            </div>
-            </div>
-
-            {/* Overlay input bar */}
-            <div className="px-4 py-3 bg-white shrink-0 space-y-2.5">
-              {/* Suggestion pills */}
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
-                {SUGGESTIONS.map((s) => (
-                  <button
-                    key={s.label}
-                    onClick={() => handleSend(s.label)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-200 text-[13px] text-gray-600 hover:text-gray-900 hover:border-gray-300 hover:shadow-sm transition-all whitespace-nowrap shrink-0"
-                  >
-                    <s.icon className="w-4 h-4 text-gray-400" />
-                    {s.label}
-                  </button>
-                ))}
               </div>
-              <div className="flex items-center gap-2 bg-gray-100 rounded-full pl-3 pr-2.5 py-2 border border-gray-200 focus-within:border-gray-300 focus-within:bg-gray-50 transition-all">
-                <input
-                  ref={overlayInputRef}
-                  type="text"
-                  placeholder="Ask Booking Assistant anything..."
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none min-w-0"
-                />
-                {inputValue.trim() ? (
-                  <button
-                    onClick={() => handleSend()}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-brand hover:bg-brand-hover text-white transition-colors shrink-0"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                  </button>
-                ) : (
-                  <button className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-colors shrink-0">
-                    <AudioLines className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
 
+      {/* Bottom bar — hidden on desktop when overlay is open (overlay has its own input) */}
+      {!(variant === "default" && isOverlayOpen) && (
       <div className={`shrink-0 bg-white flex flex-col ${
         variant === "mobile-float"
           ? "fixed bottom-0 left-0 right-0 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] rounded-t-[12px] overflow-hidden"
@@ -613,29 +607,12 @@ export function AiChat({ variant = "default", overlayOpen, onOverlayChange }: { 
 
         {/* Input bar — always visible */}
         <div className="px-3 sm:px-4 py-2.5 bg-white">
-          {/* Quick suggestion chips when collapsed and no messages */}
-          {!isExpanded && !isOverlayOpen && messages.length === 0 && (
-            <div className={`flex gap-2 mb-2.5 overflow-x-auto scrollbar-hide pb-0.5 ${variant === "mobile-float" ? "hidden" : ""}`}>
-              {SUGGESTIONS.map((s) => (
-                <button
-                  key={s.label}
-                  onClick={() => {
-                    setIsOverlayOpen(true);
-                    setTimeout(() => handleSend(s.label), 300);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-gray-200 text-xs text-gray-600 hover:text-gray-900 hover:border-gray-300 hover:shadow-sm transition-all whitespace-nowrap shrink-0"
-                >
-                  <s.icon className="w-3.5 h-3.5 text-gray-400" />
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          )}
           <div className="flex items-center gap-2 bg-gray-100 rounded-full pl-2.5 pr-2.5 py-2 border border-gray-200 focus-within:border-gray-300 focus-within:bg-gray-50 transition-all">
             <button
               onClick={() => {
-                setIsOverlayOpen(true);
-                inputRef.current?.blur();
+                if (isOverlayOpen) {
+                  setIsOverlayOpen(false);
+                }
               }}
               className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors shrink-0"
             >
@@ -653,10 +630,6 @@ export function AiChat({ variant = "default", overlayOpen, onOverlayChange }: { 
               placeholder="Ask Booking Assistant anything..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onFocus={() => {
-                setIsOverlayOpen(true);
-                inputRef.current?.blur();
-              }}
               onKeyDown={handleKeyDown}
               className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none min-w-0"
             />
@@ -673,9 +646,6 @@ export function AiChat({ variant = "default", overlayOpen, onOverlayChange }: { 
                   <Mic className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => {
-                    setIsOverlayOpen(true);
-                  }}
                   className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-colors shrink-0"
                 >
                   <AudioLines className="w-4 h-4" />
@@ -685,6 +655,7 @@ export function AiChat({ variant = "default", overlayOpen, onOverlayChange }: { 
           </div>
         </div>
       </div>
+      )}
     </>
   );
 }

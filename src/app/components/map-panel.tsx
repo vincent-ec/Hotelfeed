@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Hotel } from "./hotel-data";
 import { X, Star, MapPin, Plus, Minus } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { hotels as allHotels } from "./hotel-data";
 
 function PriceMarker({
   hotel,
@@ -153,16 +154,65 @@ export function MapPanel({
   activeHotelId,
   onHotelHover,
   onHotelLeave,
+  overlayOpen,
 }: {
   hotels: Hotel[];
   activeHotelId: string | null;
   onHotelHover: (id: string) => void;
   onHotelLeave: () => void;
+  overlayOpen?: boolean;
 }) {
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
 
+  // Compute zoom/pan transform to fit filtered hotels in visible area
+  const mapTransform = useMemo(() => {
+    const isFiltered = hotels.length < allHotels.length && hotels.length > 0;
+    if (!isFiltered) {
+      return { scale: 1, translateX: 0, translateY: 0 };
+    }
+
+    // Include venue position (50%, 50%) in the bounding box so hotels are shown relative to venue
+    const venuePos = { x: 50, y: 50 };
+    const allPoints = [...hotels.map((h) => h.mapPosition), venuePos];
+
+    const padding = 15; // percentage padding around bounding box
+    const minX = Math.min(...allPoints.map((p) => p.x));
+    const maxX = Math.max(...allPoints.map((p) => p.x));
+    const minY = Math.min(...allPoints.map((p) => p.y));
+    const maxY = Math.max(...allPoints.map((p) => p.y));
+
+    const rangeX = Math.max(maxX - minX + padding * 2, 25);
+    const rangeY = Math.max(maxY - minY + padding * 2, 25);
+
+    const scaleX = 100 / rangeX;
+    const scaleY = 100 / rangeY;
+    const scale = Math.min(scaleX, scaleY, 2.5);
+
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+
+    // When overlay is open, shift the target center upward so pins sit above the overlay
+    const targetY = overlayOpen ? 30 : 50;
+
+    const translateX = 50 - scale * cx;
+    const translateY = targetY - scale * cy;
+
+    return { scale, translateX, translateY };
+  }, [hotels, overlayOpen]);
+
   return (
     <div className="relative w-full h-full bg-[#e8ede4] overflow-hidden rounded-xl">
+      {/* Transformable map content layer */}
+      <motion.div
+        className="absolute inset-0"
+        animate={{
+          scale: mapTransform.scale,
+          x: `${mapTransform.translateX}%`,
+          y: `${mapTransform.translateY}%`,
+        }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        style={{ transformOrigin: "0% 0%" }}
+      >
       {/* Map background simulation with grid and roads */}
       <div className="absolute inset-0">
         {/* Water body */}
@@ -228,6 +278,7 @@ export function MapPanel({
           />
         )}
       </AnimatePresence>
+      </motion.div>
 
       {/* Map controls */}
       <div className="absolute bottom-4 right-4 flex flex-col gap-1">
@@ -240,7 +291,7 @@ export function MapPanel({
       </div>
 
       {/* Map legend */}
-      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 flex items-center gap-4 text-[10px] text-gray-600">
+      <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 flex items-center gap-4 text-[10px] text-gray-600">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full bg-orange-500 flex items-center justify-center">
             <Star className="w-2 h-2 text-white fill-white" />
